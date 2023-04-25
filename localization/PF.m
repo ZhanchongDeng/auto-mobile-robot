@@ -26,7 +26,7 @@ for i = 1:N
     allSensorWeights = normpdf(z, sensor_model(particlesNew(i,:)'), noiseSensor);
     % remove 0 cause easily all 0 with such small std
     %allSensorWeights = allSensorWeights(allSensorWeights~=0);
-    allSensorWeights = allSensorWeights + 1e-5;
+    allSensorWeights = allSensorWeights + 1e-10;
     % product of all elements in all Sensor Weights
     weightsNew(i,:) = prod(allSensorWeights, 'all');
 end

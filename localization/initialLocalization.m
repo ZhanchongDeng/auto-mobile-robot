@@ -16,7 +16,7 @@ if nargin < 1
     disp('ERROR: TCP/IP port object not provided.');
     return;
 elseif nargin < 2
-    maxTime = 120;
+    maxTime = 2;
 end
 
 try 
@@ -49,12 +49,16 @@ noRobotCount = 0;
 % parameter to try
 maxV = 0.4;             % speed of car
 maxW = 0.13;            % angular
-pSize = 500;            % particle size
+pSize = 100;            % particle size
 particleStateNoise = 0.01;  % noise for spreading particles
 particleSensorNoise = 0.01; % noise for evaluating particles
+k = 5;                 % top K particles to estimate final pose
+% Constants
+sensor_pos = [0 0];
+% beaconLoc, map, optWalls, beaconLoc, waypoints, ECwaypoints
+load("practiceMap_4credits/practiceMap_4credits.mat")
 
 % Initialize particles
-sensor_pos = [0.13 0];
 initialParticles = particlesFromWaypoints(pSize, waypoints);
 dataStore.particles = initialParticles;
 dataStore.weights = 1/pSize + zeros(pSize,1);
@@ -78,8 +82,8 @@ while toc < maxTime
     end
 
     % Spin for some time
-    V = 0;
-    W = 1;
+    cmdV = 0;
+    cmdW = 0.5;
 
     % get control and detph
     u = dataStore.odometry(end, 2:end).';
@@ -99,11 +103,14 @@ while toc < maxTime
     else
         SetFwdVelAngVelCreate(Robot, cmdV, cmdW);
     end
-
+    pause(0.1);
 end
 
 % set forward and angular velocity to zero (stop robot) before exiting the function
 SetFwdVelAngVelCreate(Robot, 0, 0);
 % Control Loop Ends
+
+% Extract pose
+dataStore.predictedPose = matchWaypoints(dataStore.particles(:,:,end), dataStore.weights(:,:,end), waypoints, k);
 end
 

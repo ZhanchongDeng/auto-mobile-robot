@@ -24,7 +24,7 @@ function [initialParticles] = particlesFromWaypoints(pSize, waypoints)
         particles = zeros(cur_size, 3);
         particles(:,1) = waypoints(i,1);
         particles(:,2) = waypoints(i,2);
-        particles(:,3) = sampleUniform(0, 2*pi , cur_size);
+        particles(:,3) = sampleUniform(-pi, pi , cur_size);
         initialParticles(indexes(i):indexes(i+1),:) = particles;
     end
 
