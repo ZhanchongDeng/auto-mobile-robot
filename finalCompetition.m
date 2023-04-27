@@ -39,10 +39,11 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     epsilon = 0.2;
     gotopt = 1;
     closeEnough = 0.2;
-    sensor_pos = [offset_x, offset_y];
+%     sensor_pos = [offset_x, offset_y];
+    sensor_pos = [0,0];
     
     % Load map
-    map_file = 'practiceMap_4credits.mat';
+    map_file = 'practiceMap_4credits_2023.mat';
     load(map_file, 'beaconLoc', 'ECwaypoints', 'map', 'optWalls', 'waypoints');
     
     %% ==== Plot map ==== %%
@@ -108,6 +109,12 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     dataStore.predictedPose = matchWaypoints(dataStore.particles(:,:,end), dataStore.weights(:,:,end), waypoints, k);
     
     %% ==== EKF Setup ==== %% 
-    
+    process_noise = 0.01;
+    depth_sensor_noise = 0.01;
+    beacon_sensor_noise = 0.01;
+    errorThreshold = 0.5;   % slice out all (actual - expected) > threshold
+    dataStore.ekfSigma = [0.05 0 0; 0 0.05 0; 0 0 0.1];
+
+    if 
 
 end
