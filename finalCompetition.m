@@ -115,6 +115,15 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     errorThreshold = 0.5;   % slice out all (actual - expected) > threshold
     dataStore.ekfSigma = [0.05 0 0; 0 0.05 0; 0 0 0.1];
 
-    if 
+    %% ==== Plot Trajectory ==== %
+    tp = dataStore.truthPose;
+    ptraj = plot(tp(:, 2), tp(:, 3), 'b', 'LineWidth', 2);
+    pekf_mu = plot()
+    legend([pmap(1), poptwalls(1), ptraj], ...
+        'Map', 'Optional Walls', 'Trajectory')
+    xlabel('x(m)')
+    ylabel('y(m)')
+    title('Robot true trajectory, EKF estimated trajectory')
+    hold off
 
 end

@@ -19,6 +19,12 @@ if size(beacon_data, 1) >= 1
         if beacon_data(i, 1) == last_time
             id = beacon_data(i, 3);
             idx = find(beacon(:, 3) == id);
+%             disp('idx')
+%             idx
+%             disp('z_beacon')
+%             z_beacon(idx * 2 - 1:idx * 2)
+%             size(z_beacon(idx * 2 - 1:idx * 2))
+%             size(beacon_data(i, 4:5).')
             z_beacon(idx * 2 - 1:idx * 2) = beacon_data(i, 4:5).';
         else
             break;
