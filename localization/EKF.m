@@ -6,7 +6,7 @@ function [mu_next, sigma_next] = EKF(mu, sigma, u, z, dynamics_model, ...
 %   mu                  -   3 x 1 mean of the state [x; y; theta]
 %   sigma               -   3 x 3 covariance of the state
 %   u                   -   control input [d; phi]
-%   z                   -   measurement (could be GPS pose [x; y; theta] or depth K x 1)
+%   z                   -   combined measurement
 %   dynamics_model      -   g(mu, u) -> next mu
 %   dynamics_jacobian   -   g_jac(mu, u) -> 3 x 3 Jacobian of the dynamics
 %   R                   -   3 x 3 covariance of the control noise
