@@ -16,7 +16,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
         disp('ERROR: TCP/IP port object not provided.');
         return;
     elseif nargin < 2
-        maxTime = 120;
+        maxTime = 5;
     end
 
     try
@@ -48,10 +48,10 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
     % parameter to try
     process_noise = 0.01;
     depth_sensor_noise = 0.01;
-    beacon_sensor_noise = 0.01;
+    beacon_sensor_noise = 0.001;
     errorThreshold = 0.5; % slice out all (actual - expected) > threshold
-    V = 5;
-    W = 5;
+    V = 1;
+    W = 1;
     maxV = 0.4; % speed of car
     maxW = 0.13; % angular
     n_rs_rays = 9; % number of rays for range sensor
@@ -66,7 +66,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
 
     [x, y, theta] = OverheadLocalizationCreate(Robot);
     initialPose = [x; y; theta];
-    dataStore.ekfSigma = [0.05 0 0; 0 0.05 0; 0 0 0.1];
+    dataStore.ekfSigma = [0.01 0 0; 0 0.01 0; 0 0 0.01];
     dataStore.ekfMu = initialPose;
 
     R = process_noise * eye(3);
@@ -126,7 +126,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
 
             [mu_next, sigma_next] = ...
                 EKF(dataStore.ekfMu(:, :, end), dataStore.ekfSigma(:, :, end), u, z_depth, z_beacon, ...
-                dynamics, dynamicsJac, R, h_depthAndBeacon, hJac_depthAndBeacon, Q, errorThreshold);
+                dynamics, dynamicsJac, R, h_depthAndBeacon, hJac_depthAndBeacon, Q, Inf);
             dataStore.ekfMu(:, :, end + 1) = mu_next;
             dataStore.ekfSigma(:, :, end + 1) = sigma_next;
 
@@ -141,6 +141,8 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
         else
             SetFwdVelAngVelCreate(Robot, cmdV, cmdW);
         end
+
+        pause(0.1)
 
     end
 

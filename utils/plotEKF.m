@@ -7,21 +7,20 @@ for i = 1:length(map)
 
 end
 g(2) = plot(dataStore.truthPose(:,2), dataStore.truthPose(:,3), 'g');
-g(3) = plot(dataStore.deadReck(1,:), dataStore.deadReck(2,:), 'r');
-% g(4) = plot(squeeze(dataStore.ekfMu(1,:,:)), squeeze(dataStore.ekfMu(2,:,:)), 'c');
-g(4) = plot(squeeze(ekfMu(:,1)), squeeze(ekfMu(:,2)), 'c.');
+g(3) = plot(squeeze(dataStore.ekfMu(1,:,:)), squeeze(dataStore.ekfMu(2,:,:)), 'c.');
+% g(3) = plot(squeeze(ekfMu(:,1)), squeeze(ekfMu(:,2)), 'c.');
 % g(4) = plot(squeeze(dataStore2.ekfMu(1,:,:)), squeeze(dataStore2.ekfMu(2,:,:)), 'm');
 
 covIdx = linspace(1,size(dataStore.ekfMu, 3)-1, 5);
 for i = 1:5
     idx = floor(covIdx(i));
-%     pose = squeeze(dataStore.ekfMu(:,:,idx));
-%     sigma = squeeze(dataStore.ekfSigma(:,:,idx));
-%     g(5) = plotCovEllipse(pose(1:2),sigma(1:2,1:2),1,[{'color'},{'b'}]);
+    pose = squeeze(dataStore.ekfMu(:,:,idx));
+    sigma = squeeze(dataStore.ekfSigma(:,:,idx));
+    g(4) = plotCovEllipse(pose(1:2),sigma(1:2,1:2),1,[{'color'},{'b'}]);
 
-    pose2 = squeeze(ekfMu(idx,:));
-    sigma2 = squeeze(ekfSigma(idx,:,:));
-    g(5) = plotCovEllipse(pose2(1:2),sigma2(1:2,1:2),1,[{'color'},{'b'}]);
+    % pose2 = squeeze(ekfMu(idx,:));
+    % sigma2 = squeeze(ekfSigma(idx,:,:));
+    % g(4) = plotCovEllipse(pose2(1:2),sigma2(1:2,1:2),1,[{'color'},{'b'}]);
 end
 % % plot initial cov
 % pose = squeeze(dataStore.ekfMu(:,:,1));
@@ -32,8 +31,8 @@ end
 % sigma = squeeze(dataStore.ekfSigma(:,:,end));
 % g(6) = plotCovEllipse(pose(1:2),sigma(1:2,1:2),1);
 
-title("EKF Depth Run 2 ml2226")
-legend(g, 'Walls', 'Truth Pose','Dead Reck', 'EKF Depth', 'Sigma')
+title("EKF with depth and Beacon")
+legend(g, 'Walls', 'Truth Pose', 'EKF', 'Sigma')
 % title("EKF Depth compare Code")
 % legend(g, 'Walls', 'Truth Pose','EKF Depth zd87', 'EKF Depth ml2226', 'Sigma zd87', 'Sigma ml2226')
 % title("EKF GPS")
