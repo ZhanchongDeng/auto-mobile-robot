@@ -46,11 +46,12 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
     noRobotCount = 0;
 
     % parameter to try
+    selfRotateTime = 16;
     maxV = 0.4; % speed of car
     maxW = 0.13; % angular
-    pSize = 100; % particle size
-    particleStateNoise = 0.01; % noise for spreading particles
-    particleSensorNoise = 0.01; % noise for evaluating particles
+    pSize = 120; % particle size
+    particleStateNoise = [0.01; 0.01; pi / 18]; % noise for spreading particles
+    particleSensorNoise = 0.1; % noise for evaluating particles
     k = 5; % top K particles to estimate final pose
     % Constants
     sensor_pos = [0 0.08];
@@ -90,7 +91,12 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
 
         % Spin for some time
         cmdV = 0;
-        cmdW = 0.5;
+
+        if toc < selfRotateTime
+            cmdW = 0.5;
+        else
+            cmdW = 0;
+        end
 
         % get control and detph
         u = dataStore.odometry(end, 2:end).';
