@@ -12,7 +12,7 @@ function[jac] = HBeacont(pose,sensorPos,beacon)
 
 
 % set up pertubations
-delta = le-4;
+delta = 1e-4;
 deltax = [delta,0,0];
 deltay = [0,delta,0];
 deltat = [0,0,delta];
@@ -24,6 +24,6 @@ exp_pos_y = hBeacon(pose + deltay,sensorPos,beacon);
 exp_pos_t = hBeacon(pose + deltat,sensorPos,beacon);
 
 % save finite differences in jacobian matrix
-jac =[(exp_pos_x-exp_pos)/delta, (exp_pos_y-exp_pos)/delta, (exp_pos_t-exp_pos)/deltal];
+jac =[(exp_pos_x-exp_pos)/delta, (exp_pos_y-exp_pos)/delta, (exp_pos_t-exp_pos)/delta];
 
 end

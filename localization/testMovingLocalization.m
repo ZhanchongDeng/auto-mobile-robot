@@ -50,6 +50,8 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
     depth_sensor_noise = 0.01;
     beacon_sensor_noise = 0.01;
     errorThreshold = 0.5; % slice out all (actual - expected) > threshold
+    V = 5;
+    W = 5;
     maxV = 0.4; % speed of car
     maxW = 0.13; % angular
     n_rs_rays = 9; % number of rays for range sensor
@@ -69,9 +71,9 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
 
     R = process_noise * eye(3);
     % set Q (beacon_length + 9, beacon_length + 9) first beacon_length to beacon_sensor_noise, last 9 to depth_sensor_noise
-    Q = zeros(beacon_length + n_rs_rays, beacon_length + n_rs_rays);
-    Q(1:beacon_length, 1:beacon_length) = beacon_sensor_noise * eye(beacon_length);
-    Q(beacon_length + 1:end, beacon_length + 1:end) = depth_sensor_noise * eye(n_rs_rays);
+    Q = zeros(beacon_length*2 + n_rs_rays, beacon_length*2 + n_rs_rays);
+    Q(1:beacon_length * 2, 1:beacon_length * 2) = beacon_sensor_noise * eye(beacon_length * 2);
+    Q(beacon_length * 2 + 1:end, beacon_length * 2 + 1:end) = depth_sensor_noise * eye(n_rs_rays);
 
     % anonymous functions
     dynamics = @(x, u) integrateOdom(x, u(1), u(2));
@@ -81,7 +83,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
     % sensorDepth = @(x) depthPredict(x, map, sensor_pos, angles.');
     % sensorDepthJac = @(x) HjacDepth(x, map, sensor_pos, n_rs_rays);
 
-    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, sensor_pose, angles.')];
+    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, sensor_pos, angles.')];
     hJac_depthAndBeacon = @(x) [HBeacont(x, sensor_pos, beacon); HjacDepth(x, map, sensor_pos, n_rs_rays)];
 
     SetFwdVelAngVelCreate(Robot, 0, 0);
@@ -106,7 +108,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
             TurnCreate(Robot, W, -30);
             %         turnAngle(CreatePort, W, -30);
         else
-            cmdV = V;
+            cmdV = 5;
             cmdW = 0;
         end
 
@@ -124,7 +126,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
 
             [mu_next, sigma_next] = ...
                 EKF(dataStore.ekfMu(:, :, end), dataStore.ekfSigma(:, :, end), u, z_depth, z_beacon, ...
-                dynamics, dynamicsJac, R, h_depthAndBeacon, hJac_depthAndBeacon, Q_depth, errorThreshold);
+                dynamics, dynamicsJac, R, h_depthAndBeacon, hJac_depthAndBeacon, Q, errorThreshold);
             dataStore.ekfMu(:, :, end + 1) = mu_next;
             dataStore.ekfSigma(:, :, end + 1) = sigma_next;
 

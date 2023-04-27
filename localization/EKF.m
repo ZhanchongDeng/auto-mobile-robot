@@ -32,11 +32,10 @@ sigma_bar = G * sigma * G.' + R;
 
 % clip to map range
 H = sensor_jacobian(mu_bar);
-
-z = [z_beacon z_depth];
+z = [z_beacon; z_depth];
 % slice out measurement that is too different
 diff = z - sensor_model(mu_bar);
-reasonable = ((~isnan(z)) && (abs(diff) < errThreshold));
+reasonable = ((~isnan(z)) & (abs(diff) < errThreshold));
 diff = diff(reasonable);
 H = H(reasonable, :);
 Q = Q(reasonable, reasonable);
