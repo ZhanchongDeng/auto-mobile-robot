@@ -1,7 +1,7 @@
-function [dataStore] = initialLocalization(Robot,maxTime)
-% initialLocalization: Determine which waypoint the robot is on using Particle Filter.
+function [dataStore] = testInitialLocalization(Robot,maxTime)
+% testInitialLocalization: Determine which waypoint the robot is on using Particle Filter.
 %
-%   [dataStore] = initialLocalization(Robot,maxTime)
+%   [dataStore] = testInitialLocalization(Robot,maxTime)
 %
 %   INPUTS
 %       Robot       robot object
