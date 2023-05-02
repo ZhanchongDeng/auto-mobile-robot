@@ -26,7 +26,7 @@ function [q_samp] = sample_from_Qfree(obs, mapBoundary, goal)
         q_samp = goal;
     else
         % Sample from N(goal, sigma)
-        sigma = 10;
+        sigma = 1.5;
         cov = eye(2) * sigma;
         q_samp = mvnrnd(goal, cov);
         while ~check_pt_free(q_samp, obs)
