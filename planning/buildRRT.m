@@ -1,4 +1,4 @@
-function [waypoints_startTOgoal, edges, pmap] = buildRRT(obs,mapBoundary,start,goal, radius)
+function [waypoints_startTOgoal, edges] = buildRRT(obs,mapBoundary,start,goal, radius)
 % BUILDRRT: Run RRT with circular robot
 %
 %       INPUTS:
@@ -14,11 +14,11 @@ function [waypoints_startTOgoal, edges, pmap] = buildRRT(obs,mapBoundary,start,g
 
 %% Parameter Setup
     step_size = 0.2; % Ideal
-    step_size = 0.09;
+%     step_size = 0.09;
     max_tree_size = 5000;
-    h = figure();
+%     h = figure();
     
-    [pmap] = plotObs(obs, mapBoundary);
+%     [pmap] = plotObs(obs, mapBoundary);
     hold on
     nodes = start;
     edges = [0 0 0 0];

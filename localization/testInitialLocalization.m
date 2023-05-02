@@ -101,11 +101,12 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
         % get control and detph
         u = dataStore.odometry(end, 2:end).';
         z_depth = dataStore.rsdepth(end, 3:end).';
+        z_beacon = getBeacon(dataStore.beacon, beacon);
 
         currentParticles = dataStore.particles(:, :, end);
         currentWeights = dataStore.weights(:, :, end);
         [dataStore.particles(:, :, end + 1), dataStore.weights(:, :, end + 1)] = ...
-            PF_beacon(currentParticles, currentWeights, particleStateNoise, particleSensorNoise, u, z_depth, dynamics, h_depthAndBeacon);
+            PF_beacon(currentParticles, currentWeights, particleStateNoise, particleSensorNoise, u, z_depth, z_beacon, dynamics, h_depthAndBeacon);
 
         % Limit the commands
         [cmdV, cmdW] = limitCmds(cmdV, cmdW, maxV, maxW);
@@ -117,7 +118,7 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
             SetFwdVelAngVelCreate(Robot, cmdV, cmdW);
         end
 
-        pause(0.1);
+        % pause(0.1);
     end
 
     % set forward and angular velocity to zero (stop robot) before exiting the function
