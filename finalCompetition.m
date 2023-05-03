@@ -54,7 +54,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     poptwalls = plotmapopts(optWalls, 'color', 'red', 'LineWidth', 2);
     hold on
     
-    %% ==== Particle setup ==== %%
+    %% ==== Initial Localization Setup ==== %%
 %     particle_run_time = 20;
 %     pSize = 100;
 %     particleStateNoise = 0.01;  % noise for spreading particles
@@ -166,7 +166,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
             [cmdV, cmdW, gotopt] = visitWaypoints(waypoints, pose, gotopt, closeEnough, epsilon);
 
             if gotopt > length(waypoints)
-                SetFwdVelAngVelCreate(Robot, 0, 0);
+%                 SetFwdVelAngVelCreate(Robot, 0, 0);
                 disp("Reach the end of waypoints")
                 break
             end

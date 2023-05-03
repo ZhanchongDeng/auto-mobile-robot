@@ -46,7 +46,7 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
     noRobotCount = 0;
 
     % parameter to try
-    selfRotateTime = 16;
+    selfRotateTime = 2;
     maxV = 0.2; % speed of car
     maxW = 0.13; % angular
     pSize = 120; % particle size
