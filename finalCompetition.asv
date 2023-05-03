@@ -32,13 +32,12 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
                    'visitedWaypoints', []);
     
     % Parameter Setup
-    flag_use_truthpose = false;
+    flag_use_truthpose = true;
     noRobotCount = 0;
     wheel2Center = 0.16;
     radius = 0.15;
     maxV = 0.15;
-    maxW = 0.15;
-    epsilon = 0.2;
+    epsilon = 0.15;
     gotopt = 1;
     closeEnough = 0.3;
 %     sensor_pos = [offset_x, offset_y];
@@ -56,7 +55,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     hold on
     
     %% ==== Initial Localization Setup ==== %%
-    selfRotateTime = 18;
+    selfRotateTime = 16;
     pSize = 120;
     particleStateNoise = [0.05; 0.05; pi / 36]; % noise for spreading particles
     particleSensorNoise = 0.4; % noise for evaluating particles
@@ -164,8 +163,6 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
 %         goal = findClosestPoint(dataStore.unvisitedWaypoints, start);
         goal = dataStore.unvisitedWaypoints(1, :);
         [waypoints, edges] = buildRRT(obs,mapBoundary,start,goal, radius);
-        disp('waypoints')
-        disp(waypoints)
         prrt = plotmap(edges, false);
         pwaypoints = plot(waypoints(:, 1), waypoints(:, 2), 'r-', 'LineWidth', 1);
         pstart = plot(start(1), start(2), 'co', 'MarkerSize', 10);
