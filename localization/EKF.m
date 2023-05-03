@@ -37,6 +37,7 @@ z = [z_beacon; z_depth];
 diff = z - sensor_model(mu_bar);
 reasonable = ((~isnan(z)) & (abs(diff) < errThreshold));
 diff = diff(reasonable);
+diff(1:3)
 H = H(reasonable, :);
 Q = Q(reasonable, reasonable);
 

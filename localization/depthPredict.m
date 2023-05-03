@@ -63,6 +63,6 @@ for i = 1:size(angles, 1)
     depth(i) = min_depth;
 
 end
-% depth(depth < 0.175) = 0;
+depth(depth < 0.175) = 0;
 depth(depth > 10) = 10;
 end

@@ -1,3 +1,5 @@
+function h = plotEKF(map, dataStore)
+h = figure;
 g = [];
 load('practiceMap_4credits/practiceMap_4credits_2023.mat')
 for i = 1:length(map)
@@ -33,10 +35,7 @@ end
 
 title("EKF with depth and Beacon")
 legend(g, 'Walls', 'Truth Pose', 'EKF', 'Sigma')
-% title("EKF Depth compare Code")
-% legend(g, 'Walls', 'Truth Pose','EKF Depth zd87', 'EKF Depth ml2226', 'Sigma zd87', 'Sigma ml2226')
-% title("EKF GPS")
-% legend(g, 'Walls', 'Truth Pose', 'Dead Reckon', 'EKF GPS', 'Sigma')
 xlabel("x position")
 ylabel("y position")
 hold off
+end

@@ -16,7 +16,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
         disp('ERROR: TCP/IP port object not provided.');
         return;
     elseif nargin < 2
-        maxTime = 5;
+        maxTime = 2;
     end
 
     try
@@ -49,15 +49,16 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
     process_noise = 0.01;
     depth_sensor_noise = 0.01;
     beacon_sensor_noise = 0.001;
-    errorThreshold = 0.5; % slice out all (actual - expected) > threshold
+    errorThreshold = Inf; % slice out all (actual - expected) > threshold
     V = 1;
     W = 1;
     maxV = 0.4; % speed of car
     maxW = 0.13; % angular
     n_rs_rays = 9; % number of rays for range sensor
+%     h = figure;
 
     % Constants
-    sensor_pos = [0 0];
+    sensor_pos = [0 0.08];
     % map, optWalls, beaconLoc, waypoints, ECwaypoints
     load("practiceMap_4credits/practiceMap_4credits_2023.mat")
     beacon_length = size(beaconLoc, 1);
@@ -90,7 +91,6 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
     tic
 
     while toc < maxTime
-
         % READ & STORE SENSOR DATA
         [noRobotCount, dataStore] = readStoreSensorData(Robot, noRobotCount, dataStore);
 
@@ -122,11 +122,11 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
             % get control and detph
             u = dataStore.odometry(end, 2:end).';
             z_depth = dataStore.rsdepth(end, 3:end).';
-            z_beacon = getBeacon(dataStore.beacon, beacon);
+            z_beacon = getBeacon(dataStore, beacon);
 
             [mu_next, sigma_next] = ...
                 EKF(dataStore.ekfMu(:, :, end), dataStore.ekfSigma(:, :, end), u, z_depth, z_beacon, ...
-                dynamics, dynamicsJac, R, h_depthAndBeacon, hJac_depthAndBeacon, Q, Inf);
+                dynamics, dynamicsJac, R, h_depthAndBeacon, hJac_depthAndBeacon, Q, errorThreshold);
             dataStore.ekfMu(:, :, end + 1) = mu_next;
             dataStore.ekfSigma(:, :, end + 1) = sigma_next;
 
@@ -142,7 +142,9 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
             SetFwdVelAngVelCreate(Robot, cmdV, cmdW);
         end
 
-        pause(0.1)
+%         delete(h);
+%         h = plotEKF(map, dataStore);
+        pause(0.5)
 
     end
 
