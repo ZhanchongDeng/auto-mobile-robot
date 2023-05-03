@@ -16,7 +16,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
         disp('ERROR: TCP/IP port object not provided.');
         return;
     elseif nargin < 2
-        maxTime = 2;
+        maxTime = 10;
     end
 
     try
@@ -55,6 +55,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
     maxV = 0.4; % speed of car
     maxW = 0.13; % angular
     n_rs_rays = 9; % number of rays for range sensor
+    dataStore.lastBeaconTime = NaN;
 %     h = figure;
 
     % Constants
@@ -122,7 +123,12 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
             % get control and detph
             u = dataStore.odometry(end, 2:end).';
             z_depth = dataStore.rsdepth(end, 3:end).';
-            z_beacon = getBeacon(dataStore, beacon);
+            [z_beacon, dataStore.lastBeaconTime] = getBeacon(dataStore, beacon);
+            if size(dataStore.beacon) > 0
+                dataStore.odometry(end, 1)
+                dataStore.beacon(end,1)
+                z_beacon
+            end
 
             [mu_next, sigma_next] = ...
                 EKF(dataStore.ekfMu(:, :, end), dataStore.ekfSigma(:, :, end), u, z_depth, z_beacon, ...
@@ -144,7 +150,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
 
 %         delete(h);
 %         h = plotEKF(map, dataStore);
-        pause(0.5)
+        pause(0.1)
 
     end
 

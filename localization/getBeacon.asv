@@ -1,4 +1,4 @@
-function [z_beacon, lastBeaconTime] = getBeacon(dataStore, beacon)
+function [z_beacon = getBeacon(dataStore, beacon)
 % GETBEACON: given beacon data and beacon info, compute the measurement
 % data z_beacon
 %
@@ -10,7 +10,6 @@ function [z_beacon, lastBeaconTime] = getBeacon(dataStore, beacon)
 %
 %   OUTPUTS:
 %       z_beacon        2n-by-1 [x1; y1; ...] in global
-%       lastBeaconTime  updated last beacon time
 %
 n = size(beacon, 1);
 z_beacon = NaN(2*n,1);
@@ -27,6 +26,7 @@ if size(beacon_data, 1) >= 1
             break;
         end
     end
-    lastBeaconTime = beacon_data(end, 1);
+    dataStore.lastBeaconTime = beacon_data(end, 1);
+    dataStore.lastBeaconTime
 end
 end
