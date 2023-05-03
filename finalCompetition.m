@@ -32,15 +32,15 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
                    'visitedWaypoints', []);
     
     % Parameter Setup
-    flag_use_truthpose = false;
+    flag_use_truthpose = true;
     noRobotCount = 0;
     wheel2Center = 0.16;
-    radius = 0.15;
+    radius = 0.2;
     maxV = 0.15;
-    maxW = 0.15;
-    epsilon = 0.2;
+%     maxW = 0.13;
+    epsilon = 0.13;
     gotopt = 1;
-    closeEnough = 0.3;
+    closeEnough = 0.25;
 %     sensor_pos = [offset_x, offset_y];
     sensor_pos = [0,0.08];
     
@@ -56,7 +56,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     hold on
     
     %% ==== Initial Localization Setup ==== %%
-    selfRotateTime = 18;
+    selfRotateTime = 15;
     pSize = 120;
     particleStateNoise = [0.05; 0.05; pi / 36]; % noise for spreading particles
     particleSensorNoise = 0.4; % noise for evaluating particles
@@ -106,7 +106,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
             
 
         % Limit the commands
-        [cmdV, cmdW] = limitCmds(cmdV, cmdW, maxV, maxW);
+        [cmdV, cmdW] = limitCmds(cmdV, cmdW, maxV, wheel2Center);
 
         % if overhead localization loses the robot for too long, stop it
         if noRobotCount >= 3
@@ -124,6 +124,8 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
 
     % Extract pose
     dataStore.predictedPose = matchWaypoints(dataStore.particles(:, :, end), dataStore.weights(:, :, end), waypoints, k);
+    dataStore.predictedPose(1,3) = mod(dataStore.predictedPose(1,3),pi);
+    
     %% ==== EKF Setup ==== %% 
 %     process_noise = 0.01;
 %     depth_sensor_noise = 0.01;

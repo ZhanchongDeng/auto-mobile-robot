@@ -15,8 +15,8 @@ function [cmdV, cmdW, gotopt] = visitWaypoints(waypoints, pose, gotopt, closeEno
     dist = norm(curr_waypoint - pose(1:2));
     if dist < closeEnough
         % arrive at current waypoint
-        cmdV = 0;
-        cmdW = 0;
+%         cmdV = 0;
+%         cmdW = 0;
         gotopt = gotopt + 1;
         return;
     end
