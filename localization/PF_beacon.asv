@@ -52,7 +52,7 @@ function [particlesNew, weightsNew] = PF_beacon(particles, weights, noiseState, 
         allSensorWeights = normpdf(0, expected_z, 1);
         % for nans in expected_z but not in z, punish hard by setting small
         % values
-        allSensorWeights(isNanExpected) = normpdf(0,4,1);
+        allSensorWeights(isNanExpected) = 1e-;
         % product of all elements in all Sensor Weights
         weightsNew(i, :) = max(prod(allSensorWeights, 'all'), 0);
 
