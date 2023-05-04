@@ -1,4 +1,5 @@
-function [g] = plotPF(dataStore, map)
+function [h] = plotPF(dataStore, map)
+    h = figure;
     g = [];
     for i = 1:length(map)
         wall = reshape(map(i,:), 2,2);
@@ -11,7 +12,7 @@ function [g] = plotPF(dataStore, map)
     theta = dataStore.particles(:,3,1);
     g(2) = quiver(x, y, cos(theta), sin(theta), 'Color', 'y');
     g(3) = quiver(dataStore.truthPose(end,2), dataStore.truthPose(end,3), ...
-        cos(dataStore.truthPose(end,4)), sin(dataStore.truthPose(end,4)), 'g');
+        cos(dataStore.truthPose(end,4)), sin(dataStore.truthPose(end,4)), 'r');
     x = dataStore.particles(:,1,end);
     y = dataStore.particles(:,2,end);
     theta = dataStore.particles(:,3,end);
@@ -40,6 +41,6 @@ function [g] = plotPF(dataStore, map)
     xlabel("x positions")
     ylabel("y positions")
     
-    legend(g, 'Wall', 'Initial Particles', 'True Pose', 'Final Particles', 'Predicted Pose')
+    legend(g, 'Wall', 'Initial Particles', 'True Pose', 'Final Particles', 'Predicted Pose', 'Location', 'Best')
     % legend(g, 'wall', 'truth pose', 'initial', 'final','1st traj')
 end

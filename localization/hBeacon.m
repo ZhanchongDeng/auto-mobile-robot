@@ -16,7 +16,16 @@ exp_pos = zeros(2*length(beacon),1);
 counter = 1;
 for i = 1: length(beacon)
     p = global2robot(pose,beacon(i,1:2)) - sensorPos;
-    exp_pos(counter) = p(1);
-    exp_pos(counter +1)= p(2);
+    % find angle w.r.t to sensor and bound it between -pi and pi
+    dist = norm(p);
+    angle = mod(atan2(p(2), p(1)) + pi, 2 * pi) - pi;
+
+    if abs(angle) > deg2rad(30)
+        exp_pos(counter) = NaN;
+        exp_pos(counter + 1)= NaN;
+    else
+        exp_pos(counter) = p(1);
+        exp_pos(counter + 1)= p(2);
+    end
     counter = counter + 2;
 end
