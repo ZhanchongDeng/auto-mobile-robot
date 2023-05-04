@@ -37,7 +37,8 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
         'odometry', [], ...
         'rsdepth', [], ...
         'bump', [], ...
-        'beacon', []);
+        'beacon', [],...
+        'PF_Loc',[]);
 
     % Variable used to keep track of whether the overhead localization "lost"
     % the robot (number of consecutive times the robot was not identified).
@@ -49,6 +50,8 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
     selfRotateTime = 16;
     maxV = 0.2; % speed of car
     maxW = 0.13; % angular
+    V = 1;
+    W = 1;
     pSize = 120; % particle size
     particleStateNoise = [0.05; 0.05; pi / 36]; % noise for spreading particles
     particleSensorNoise = 0.4; % noise for evaluating particles
@@ -104,19 +107,19 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
         % only evaluate these if in real time
         if real_time
             % Collect some data from dataStore
-            tp = dataStore.truthPose(end, 2:end).';
+%             tp = dataStore.truthPose(end, 2:end).';
 
             % get control and detph
             u = dataStore.odometry(end, 2:end).';
             z_depth = dataStore.rsdepth(end, 3:end).';
-            z_beacon = getBeacon(dataStore, beacon);
 
-            [mu_next, sigma_next] = ...
-                EKF(dataStore.ekfMu(:, :, end), dataStore.ekfSigma(:, :, end), u, z_depth, z_beacon, ...
-                dynamics, dynamicsJac, R, h_depthAndBeacon, hJac_depthAndBeacon, Q, errorThreshold);
-            dataStore.ekfMu(:, :, end + 1) = mu_next;
-            dataStore.ekfSigma(:, :, end + 1) = sigma_next;
+            currentParticles = dataStore.particles(:, :, end);
+            currentWeights = dataStore.weights(:, :, end);
 
+            [dataStore.particles(:, :, end + 1), dataStore.weights(:, :, end + 1)] = ...
+                PF(currentParticles, currentWeights, particleStateNoise, particleSensorNoise, u, z_depth, dynamics, sensorDepth);
+            dataStore.PF_Loc (:,:,end + 1) = topKPose(dataStore.particles(:, :, end), dataStore.weights(:, :, end), k);
+            
         end
 
         % Limit the commands
