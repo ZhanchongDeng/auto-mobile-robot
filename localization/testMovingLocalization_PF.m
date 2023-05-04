@@ -49,12 +49,12 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
 
  % parameter to try
     selfRotateTime = 16;
-    maxV = 0.2; % speed of car
+    maxV = 0.1; % speed of car
     maxW = 0.13; % angular
 
     pSize = 120; % particle size
-    particleStateNoise = [0.1; 0.1; pi / 36]; % noise for spreading particles
-    particleDepthNoise = 0.4; % noise for evaluating depth rays
+    particleStateNoise = [0.05; 0.05; pi / 36]; % noise for spreading particles
+    particleDepthNoise = 0.3; % noise for evaluating depth rays
     particleBeaconNoise = 0.05; % noise for evaluating beacon
     k = 5; % top K particles to estimate final pose
     
@@ -71,7 +71,7 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
     beacon = [beaconLoc(:, 2) beaconLoc(:, 3) beaconLoc(:, 1)];
     
     % Initialize particles
-    initialParticles = zeros(pSize, 3) + [-2.44500000000000 -0.578000000000000 -pi/2];
+    initialParticles = zeros(pSize, 3) + [-2.8 0 0];
     dataStore.particles = initialParticles;
     dataStore.weights = 1 / pSize + zeros(pSize, 1);
     
