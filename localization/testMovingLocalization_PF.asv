@@ -1,7 +1,7 @@
-function [dataStore] = testInitialLocalization(Robot, maxTime)
-    % testInitialLocalization: Determine which waypoint the robot is on using Particle Filter.
+function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
+    % TESTMOVINGLOCALIZATION - controls the robot motion
     %
-    %   [dataStore] = testInitialLocalization(Robot,maxTime)
+    %   [dataStore] = testMovingLocalization(Robot,maxTime)
     %
     %   INPUTS
     %       Robot       robot object
@@ -16,7 +16,7 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
         disp('ERROR: TCP/IP port object not provided.');
         return;
     elseif nargin < 2
-        maxTime = 20;
+        maxTime = 50;
     end
 
     try
@@ -37,7 +37,8 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
         'odometry', [], ...
         'rsdepth', [], ...
         'bump', [], ...
-        'beacon', [], ...
+        'beacon', [],...
+        'predictedPose',[],...
         'lastBeaconTime', NaN);
 
     % Variable used to keep track of whether the overhead localization "lost"
@@ -46,31 +47,35 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
     % safety reasons.
     noRobotCount = 0;
 
-    % parameter to try
+ % parameter to try
     selfRotateTime = 16;
     maxV = 0.2; % speed of car
-    maxW = 0.5; % angular
-    pSize = 100; % particle size
-    particleStateNoise = [0.01; 0.01; pi / 18]; % noise for spreading particles
+    maxW = 0.13; % angular
+    V = 1;
+    W = 1;
+    pSize = 120; % particle size
+    particleStateNoise = [0.05; 0.05; pi / 36]; % noise for spreading particles
     particleDepthNoise = 1; % noise for evaluating depth rays
     particleBeaconNoise = 0.1; % noise for evaluating beacon
     k = 5; % top K particles to estimate final pose
+    
     h = figure;
+    
     % Constants
     sensor_pos = [0 0.08];
     % beaconLoc, map, optWalls, beaconLoc, waypoints, ECwaypoints
     load("practiceMap_4credits/practiceMap_4credits_2023.mat")
-
+    
     % Beacon setup
     beacon_length = size(beaconLoc, 1);
     % swap order
     beacon = [beaconLoc(:, 2) beaconLoc(:, 3) beaconLoc(:, 1)];
-
+    
     % Initialize particles
     initialParticles = particlesFromWaypoints(pSize, waypoints);
     dataStore.particles = initialParticles;
     dataStore.weights = 1 / pSize + zeros(pSize, 1);
-
+    
     % anonymous functions
     dynamics = @(x, u) integrateOdom(x, u(1), u(2));
     n_rs_rays = 9;
@@ -79,55 +84,56 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
     sensorDepth = @(x) depthPredict(x, map, sensor_pos, angles.');
     h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, sensor_pos, angles.')];
 
-    counter = 0;
-
+  
     % Control Loop
     SetFwdVelAngVelCreate(Robot, 0, 0);
     tic
 
-    while toc < maxTime
 
+    while toc < maxTime
         % READ & STORE SENSOR DATA
         [noRobotCount, dataStore] = readStoreSensorData(Robot, noRobotCount, dataStore);
 
-        % Spin for some time
-        cmdV = 0;
 
-        if toc < selfRotateTime
-            cmdW = 0.5;
+
+        % Control Sequence
+        bumpInfoNow = dataStore.bump(end, :).';
+        bumps = bumpInfoNow([2 3 7]);
+
+        if any(bumps)
+            TravelDistCreate(Robot, V, -0.5);
+            %         travelDist(CreatePort, V, -1);
+            TurnCreate(Robot, W, -30);
+            %         turnAngle(CreatePort, W, -30);
         else
+            cmdV = 5;
             cmdW = 0;
         end
 
-        % get control and detph
-        u = dataStore.odometry(end, 2:end).';
-        z_depth = dataStore.rsdepth(end, 3:end).';
-        z_beacon = getBeacon(dataStore, beacon);
-        doSample = size(dataStore.odometry,1) ~= 1;
+        real_time = true;
 
-        currentParticles = dataStore.particles(:, :, end);
-        currentWeights = dataStore.weights(:, :, end);
-        [dataStore.particles(:, :, end + 1), dataStore.weights(:, :, end + 1)] = ...
-            PF_beacon(currentParticles, currentWeights, ...
-            particleStateNoise, particleBeaconNoise, particleDepthNoise, ...
-            u, z_depth, z_beacon, dynamics, h_depthAndBeacon, doSample);
+        % only evaluate these if in real time
+        if real_time
+            % Collect some data from dataStore
+%             tp = dataStore.truthPose(end, 2:end).';
+
+            % get control and detph
+            u = dataStore.odometry(end, 2:end).';
+            z_depth = dataStore.rsdepth(end, 3:end).';
+
+            currentParticles = dataStore.particles(:, :, end);
+            currentWeights = dataStore.weights(:, :, end);
+
+            [dataStore.particles(:, :, end + 1), dataStore.weights(:, :, end + 1)] = ...
+                PF_beacon(currentParticles, currentWeights, ...
+                particleStateNoise, particleBeaconNoise, particleDepthNoise, ...
+                u, z_depth, z_beacon, dynamics, h_depthAndBeacon, true);
+            
+            dataStore.predictedPose  = [dataStore.predictedPose ; topKPose(dataStore.particles(:, :, end), dataStore.weights(:, :, end), k)];
+            delete(h);
         
-%         [dataStore.particles(:, :, end + 1), dataStore.weights(:, :, end + 1)] = ...
-%             PF(currentParticles, currentWeights, ...
-%             particleStateNoise, particleDepthNoise, ...
-%             u, z_depth, dynamics, sensorDepth);
-
-        dataStore.predictedPose = matchWaypoints(dataStore.particles(:, :, end), dataStore.weights(:, :, end), waypoints, k);
-        delete(h);
-        h = plotPF(dataStore, map);
-
-%         cmdV = 0;
-%         if toc < selfRotateTime
-%             turnAngle(CreatePort, 0.5, 90);
-%             cmdW = 0;
-%         else
-%             cmdW = 0;
-%         end
+            h = plotPF(dataStore, map);
+        end
 
         % Limit the commands
         [cmdV, cmdW] = limitCmds(cmdV, cmdW, maxV, maxW);
@@ -138,13 +144,18 @@ function [dataStore] = testInitialLocalization(Robot, maxTime)
         else
             SetFwdVelAngVelCreate(Robot, cmdV, cmdW);
         end
-        pause(0.4)
+
+%         delete(h);
+%         h = plotEKF(map, dataStore);
+%         pause(0.5)
+
     end
 
     % set forward and angular velocity to zero (stop robot) before exiting the function
     SetFwdVelAngVelCreate(Robot, 0, 0);
     % Control Loop Ends
 
-    % Extract pose
-    dataStore.predictedPose = matchWaypoints(dataStore.particles(:, :, end), dataStore.weights(:, :, end), waypoints, k);
+    % Data Processing
+%     dataStore.deadReck = integrateOdom(dataStore.truthPose(1, 2:end).', dataStore.odometry(:, 2), dataStore.odometry(:, 3));
+
 end

@@ -17,6 +17,7 @@ function [particlesNew, weightsNew] = PF_beacon(particles, weights, noiseState, 
 
     N = size(particles, 1);
     d = size(particles, 2);
+    w = 1e100;
 
     particlesNew = zeros(N, d);
     weightsNew = zeros(N, 1);
@@ -52,13 +53,20 @@ function [particlesNew, weightsNew] = PF_beacon(particles, weights, noiseState, 
         allSensorWeights = normpdf(0, expected_z, 1);
         % for nans in expected_z but not in z, punish hard by setting small
         % values
-        allSensorWeights(isNanExpected) = normpdf(0,4,1);
+%         allSensorWeights(isNanExpected) = normpdf(0,4,1);
         % product of all elements in all Sensor Weights
-        weightsNew(i, :) = max(prod(allSensorWeights, 'all'), 0);
+        disp('curr_weight')
+        weightsNew(i,:) = prod(allSensorWeights, 'all') * 1e100
+        
+%         weightsNew(i, :) = max(sum(log(allSensorWeights), 'all'), normpdf(0, 4, 1));
 
     end
+    % normalize particles
+    disp('normalized weights')
+    weightsNew = weightsNew ./ sum(weightsNew)
     % top 5 particles based on weights
     [~, idx] = sort(weightsNew, 'descend');
+    disp('Top 5 particles and weights')
     particlesNew(idx(1:5), :)
     weightsNew(idx(1:5), :)
 end

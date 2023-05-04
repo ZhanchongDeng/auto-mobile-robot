@@ -18,8 +18,8 @@ function [h] = plotPF(dataStore, map)
     theta = dataStore.particles(:,3,end);
     g(4) = quiver(x, y, cos(theta), sin(theta), 'Color', 'c');
 %     g(5) = quiver(mean(x), mean(y), cos(mean(theta)), sin(mean(theta)), 'Color', 'b');
-    g(5) = quiver(dataStore.predictedPose(1), dataStore.predictedPose(2), ...
-        cos(dataStore.predictedPose(3)), sin(dataStore.predictedPose(3)), 'Color', 'b');
+    g(5) = quiver(dataStore.predictedPose(end, 1), dataStore.predictedPose(end, 2), ...
+        cos(dataStore.predictedPose(end, 3)), sin(dataStore.predictedPose(end, 3)), 'Color', 'b');
     
     % bestParticles = zeros(size(dataStore.particles, 3), 5, 3);
     % averageParticles = zeros(size(dataStore.particles, 3), 3);

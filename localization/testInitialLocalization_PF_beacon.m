@@ -16,7 +16,7 @@ function [dataStore] = testInitialLocalization_PF_beacon(Robot, maxTime)
         disp('ERROR: TCP/IP port object not provided.');
         return;
     elseif nargin < 2
-        maxTime = 20;
+        maxTime = 18;
     end
 
     try
@@ -51,7 +51,7 @@ function [dataStore] = testInitialLocalization_PF_beacon(Robot, maxTime)
     maxV = 0.2; % speed of car
     maxW = 0.5; % angular
     pSize = 200; % particle size
-    particleStateNoise = [0.01; 0.01; pi / 18]; % noise for spreading particles
+    particleStateNoise = [0.01; 0.01; pi / 50]; % noise for spreading particles
     particleDepthNoise = 1; % noise for evaluating depth rays
     particleBeaconNoise = 0.1; % noise for evaluating beacon
     k = 5; % top K particles to estimate final pose
@@ -104,7 +104,7 @@ function [dataStore] = testInitialLocalization_PF_beacon(Robot, maxTime)
         % get control and detph
         u = dataStore.odometry(end, 2:end).';
         z_depth = dataStore.rsdepth(end, 3:end).';
-        z_beacon = getBeacon(dataStore, beacon);
+        [z_beacon, dataStore.lastBeaconTime] = getBeacon(dataStore, beacon);
         doSample = size(dataStore.odometry,1) ~= 1;
 
         currentParticles = dataStore.particles(:, :, end);
@@ -121,11 +121,12 @@ function [dataStore] = testInitialLocalization_PF_beacon(Robot, maxTime)
 
         dataStore.predictedPose = matchWaypoints(dataStore.particles(:, :, end), dataStore.weights(:, :, end), waypoints, k);
         delete(h);
+        
         h = plotPF(dataStore, map);
 
         cmdV = 0;
         if toc < selfRotateTime
-            turnAngle(CreatePort, 0.5, 60);
+            turnAngle(CreatePort, 0.2, 45);
             cmdW = 0;
         else
             cmdW = 0;
