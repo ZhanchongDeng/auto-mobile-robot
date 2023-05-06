@@ -76,8 +76,8 @@ function [dataStore] = testInitialLocalization_PF_beacon(Robot, maxTime)
     n_rs_rays = 9;
     angles_degree = linspace(27, -27, n_rs_rays);
     angles = angles_degree * pi / 180;
-    sensorDepth = @(x) depthPredict(x, map, sensor_pos, angles.');
-    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, sensor_pos, angles.')];
+    sensorDepth = @(x) depthPredict(x, map, optWalls, sensor_pos, angles.');
+    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, optWalls, sensor_pos, angles.')];
 
     counter = 0;
 

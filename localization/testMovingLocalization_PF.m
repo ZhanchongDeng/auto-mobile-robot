@@ -71,7 +71,7 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
     beacon = [beaconLoc(:, 2) beaconLoc(:, 3) beaconLoc(:, 1)];
     
     % Initialize particles
-    initialParticles = zeros(pSize, 3) + [-2.8 0 0];
+    initialParticles = zeros(pSize, 3) + [0 0 -pi/4];
     dataStore.particles = initialParticles;
     dataStore.weights = 1 / pSize + zeros(pSize, 1);
     
@@ -80,8 +80,8 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
     n_rs_rays = 9;
     angles_degree = linspace(27, -27, n_rs_rays);
     angles = angles_degree * pi / 180;
-    sensorDepth = @(x) depthPredict(x, map, sensor_pos, angles.');
-    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, sensor_pos, angles.')];
+%     sensorDepth = @(x) depthPredict(x, map, optWalls, sensor_pos, angles.');
+    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, optWalls, sensor_pos, angles.')];
 
   
     % Control Loop
@@ -97,7 +97,7 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
             dataStore.odometry(1, 2:3) = [0 0];
         end
         
-        tp = dataStore.truthPose(end, 2:4)
+        tp = dataStore.truthPose(end, 2:4);
         % Control Sequence
         bumpInfoNow = dataStore.bump(end, :).';
         bumps = bumpInfoNow([2 3 7]);
@@ -150,7 +150,7 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
 
 %         delete(h);
 %         h = plotEKF(map, dataStore);
-%         pause(0.5)
+        pause(0.4)
 
     end
 

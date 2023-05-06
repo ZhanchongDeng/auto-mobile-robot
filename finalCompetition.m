@@ -44,7 +44,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     % Load map
     map_file = 'practiceMap_4credits_2023.mat';
     load(map_file, 'beaconLoc', 'ECwaypoints', 'map', 'optWalls', 'waypoints');
-    map(end+1, :) = optWalls(2, :);
+    % map(end+1, :) = optWalls(2, :);
     
     %% ==== Plot map ==== %%
     pmap = plotmapopts(map, 'color', 'black', 'LineWidth', 2);
@@ -74,7 +74,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     n_rs_rays = 9;
     angles_degree = linspace(27, -27, n_rs_rays);
     angles = angles_degree * pi / 180;
-    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, sensor_pos, angles.')];
+    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, optWalls, sensor_pos, angles.')];
     
     %% ==== Initial Localization Control Loop ==== %% 
     tic
@@ -122,14 +122,17 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     dataStore.particles(:, :, end + 1) = initialParticles;
     dataStore.weights(:, :, end + 1) = 1 / pSize + zeros(pSize, 1);
     
-    %% ==== Planning setup ==== %% 
+    %% ==== Planning setup ==== %%
+    % assume optionalWalls are real for planning ONLY
+    mapWithOptional = [map; optionalWalls];
+
     dataStore.unvisitedWaypoints = [waypoints; ECwaypoints];
     dataStore.visitedWaypoints = [];
     mapBoundary = [min(min(map(:,1)), min(map(:,3))), ...
                    min(min(map(:,2)), min(map(:,4))), ...
                    max(max(map(:,1)), max(map(:,3))), ...
                    max(max(map(:,2)), max(map(:,4)))];
-    obs = wall2obs(map, radius);
+    obs = wall2obs(mapWithOptional, radius);
 %     [pmap] = plotObs(obs, mapBoundary);
 %     hold on
 
