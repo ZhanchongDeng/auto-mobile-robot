@@ -23,26 +23,23 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
                    'bump', [], ...
                    'beacon', [], ...
                    'deadReck', [], ...
-                   'ekfMu', [], ...
-                   'ekfSigma', [], ...
                    'particles', [], ...
                    'particle_weights', [], ...
                    'particles_bar', [], ...
                    'GPS', [], ...
-                   'visitedWaypoints', []);
+                   'visitedWaypoints', [], ...
+                   'lastBeaconTime', NaN);
     
     % Parameter Setup
-    flag_use_truthpose = true;
+    flag_use_truthpose = false;
     noRobotCount = 0;
     wheel2Center = 0.16;
     radius = 0.2;
     maxV = 0.15;
-%     maxW = 0.13;
     epsilon = 0.13;
-    gotopt = 1;
     closeEnough = 0.25;
-%     sensor_pos = [offset_x, offset_y];
-    sensor_pos = [0,0.08];
+    sensor_pos = [offset_x, offset_y];
+%     sensor_pos = [0,0.08];
     
     % Load map
     map_file = 'practiceMap_4credits_2023.mat';
@@ -56,26 +53,32 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     hold on
     
     %% ==== Initial Localization Setup ==== %%
-    selfRotateTime = 15;
+    selfRotateTime = 16;
+    initialLocalizationTime = 18;
     pSize = 120;
-    particleStateNoise = [0.05; 0.05; pi / 36]; % noise for spreading particles
-    particleSensorNoise = 0.4; % noise for evaluating particles
-    k = 5; % top K particles to estimate final pose    
+    particleStateNoise = [0.01; 0.01; pi / 50]; % noise for spreading particles
+    particleDepthNoise = 1; % noise for evaluating depth rays
+    particleBeaconNoise = 0.1; % noise for evaluating beacon
+    k = 5; % top K particles to estimate final pose   
+    
     % Initialize particles
     initialParticles = particlesFromWaypoints(pSize, waypoints);
     dataStore.particles = initialParticles;
     dataStore.weights = 1/pSize + zeros(pSize,1);
+    
+    % Beacon setup
+    beacon = [beaconLoc(:, 2) beaconLoc(:, 3) beaconLoc(:, 1)];
     
     % anonymous functions
     dynamics = @(x,u) integrateOdom(x, u(1), u(2));
     n_rs_rays = 9;
     angles_degree = linspace(27, -27, n_rs_rays);
     angles = angles_degree * pi / 180;
-    sensorDepth = @(x) depthPredict(x, map, sensor_pos, angles.');
+    h_depthAndBeacon = @(x) [hBeacon(x, sensor_pos, beacon); depthPredict(x, map, sensor_pos, angles.')];
     
     %% ==== Initial Localization Control Loop ==== %% 
     tic
-    while toc < selfRotateTime
+    while toc < initialLocalizationTime
 %         
 %         % READ & STORE SENSOR DATA
         [noRobotCount, dataStore] = readStoreSensorData(Robot, noRobotCount, dataStore);
@@ -84,54 +87,40 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
             dataStore.odometry(:, 2:end) = 0;
         end
 
-        % Spin for some time
-        cmdV = 0;
-
-        if toc < selfRotateTime
-            cmdW = 0.5;
-        else
-            cmdW = 0;
-        end
 
         % get control and detph
         u = dataStore.odometry(end, 2:end).';
         z_depth = dataStore.rsdepth(end, 3:end).';
-%         z_beacon = getBeacon(dataStore.beacon, beacon);
+        [z_beacon, dataStore.lastBeaconTime] = getBeacon(dataStore, beacon);
+         doSample = size(dataStore.odometry,1) ~= 1;
 
         currentParticles = dataStore.particles(:, :, end);
         currentWeights = dataStore.weights(:, :, end);
         [dataStore.particles(:, :, end + 1), dataStore.weights(:, :, end + 1)] = ...
-            PF(currentParticles, currentWeights, particleStateNoise, particleSensorNoise, u, z_depth, dynamics, sensorDepth);
-%             PF_beacon(currentParticles, currentWeights, particleStateNoise, particleSensorNoise, u, z_depth, z_beacon, dynamics, h_depthAndBeacon);
-            
+            PF_beacon(currentParticles, currentWeights, ...
+            particleStateNoise, particleBeaconNoise, particleDepthNoise, ...
+            u, z_depth, z_beacon, dynamics, h_depthAndBeacon, doSample);
 
-        % Limit the commands
-        [cmdV, cmdW] = limitCmds(cmdV, cmdW, maxV, wheel2Center);
-
-        % if overhead localization loses the robot for too long, stop it
-        if noRobotCount >= 3
-            SetFwdVelAngVelCreate(Robot, 0, 0);
-        else
-            SetFwdVelAngVelCreate(Robot, cmdV, cmdW);
+        if toc < selfRotateTime
+            turnAngle(CreatePort, 0.2, 45);
         end
-
-        % pause(0.1);
+       
+        SetFwdVelAngVelCreate(Robot, 0, 0);
     end
-
-    % set forward and angular velocity to zero (stop robot) before exiting the function
-    SetFwdVelAngVelCreate(Robot, 0, 0);
-    % Control Loop Ends
 
     % Extract pose
     dataStore.predictedPose = matchWaypoints(dataStore.particles(:, :, end), dataStore.weights(:, :, end), waypoints, k);
     dataStore.predictedPose(1,3) = mod(dataStore.predictedPose(1,3),pi);
     
-    %% ==== EKF Setup ==== %% 
-%     process_noise = 0.01;
-%     depth_sensor_noise = 0.01;
-%     beacon_sensor_noise = 0.01;
-%     errorThreshold = 0.5;   % slice out all (actual - expected) > threshold
-%     dataStore.ekfSigma = [0.05 0 0; 0 0.05 0; 0 0 0.1];
+    %% ==== PF Moving Localization Setup ==== %% 
+    particleStateNoise = [0.1; 0.1; pi / 36]; % noise for spreading particles
+    particleDepthNoise = 0.4; % noise for evaluating depth rays
+    particleBeaconNoise = 0.05; % noise for evaluating beacon
+    
+    % Initialize particles
+    initialParticles = zeros(pSize, 3) + dataStore.predictedPose(1,3);
+    dataStore.particles(:, :, end + 1) = initialParticles;
+    dataStore.weights(:, :, end + 1) = 1 / pSize + zeros(pSize, 1);
     
     %% ==== Planning setup ==== %% 
     dataStore.unvisitedWaypoints = [waypoints; ECwaypoints];
@@ -143,6 +132,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     obs = wall2obs(map, radius);
 %     [pmap] = plotObs(obs, mapBoundary);
 %     hold on
+
     %% ==== Check out initial waypoint ==== %%
     if flag_use_truthpose
         [noRobotCount,dataStore]=readStoreSensorData(Robot,noRobotCount,dataStore);
@@ -160,9 +150,14 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
 %     disp('start running TSP')
     dataStore.unvisitedWaypoints = sort_list_by_TSP(dataStore.unvisitedWaypoints, closest_point);
 %     disp('finish running TSP')
+
     %% ==== RRT to visit unvisited waypoints ==== %% 
     while toc < maxTime && size(dataStore.unvisitedWaypoints, 1) > 0
-        start = dataStore.truthPose(end, 2:3);
+        if flag_use_truthpose
+            start = dataStore.truthPose(end, 2:3);
+        else
+            start = dataStore.predictedPose(end, 1:2);
+        end
 %         goal = findClosestPoint(dataStore.unvisitedWaypoints, start);
         goal = dataStore.unvisitedWaypoints(1, :);
         [waypoints, edges] = buildRRT(obs,mapBoundary,start,goal, radius);
@@ -173,14 +168,35 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
         pstart = plot(start(1), start(2), 'co', 'MarkerSize', 10);
         pend = plot(goal(1), goal(2), 'm*', 'MarkerSize', 10);
         gotopt = 1;
+        
         %% Control loop
         while toc < maxTime
 
             % READ & STORE SENSOR DATA
             [noRobotCount,dataStore]=readStoreSensorData(Robot,noRobotCount,dataStore);
 
+            % GET ROBOT POSE
+            if flag_use_truthpose
+                pose = dataStore.truthPose(end, 2:end);
+            else
+                % get control and detph
+                u = dataStore.odometry(end, 2:end).';
+                z_depth = dataStore.rsdepth(end, 3:end).';
+                [z_beacon, dataStore.lastBeaconTime] = getBeacon(dataStore, beacon);
+
+                currentParticles = dataStore.particles(:, :, end);
+                currentWeights = dataStore.weights(:, :, end);
+
+                [dataStore.particles(:, :, end + 1), dataStore.weights(:, :, end + 1)] = ...
+                    PF_beacon(currentParticles, currentWeights, ...
+                    particleStateNoise, particleBeaconNoise, particleDepthNoise, ...
+                    u, z_depth, z_beacon, dynamics, h_depthAndBeacon, true);
+
+                dataStore.predictedPose  = [dataStore.predictedPose ; topKPose(dataStore.particles(:, :, end), dataStore.weights(:, :, end), k)];
+                pose = dataStore.predictedPose(end, 1:3);
+            end
+            
             % CONTROL FUNCTION (send robot commands)
-            pose = dataStore.truthPose(end, 2:end);
             [cmdV, cmdW, gotopt] = visitWaypoints(waypoints, pose, gotopt, closeEnough, epsilon);
 
             if gotopt > length(waypoints)
