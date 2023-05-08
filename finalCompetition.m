@@ -124,7 +124,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     
     %% ==== Planning setup ==== %%
     % assume optionalWalls are real for planning ONLY
-    mapWithOptional = [map; optionalWalls];
+    mapWithOptional = [map; optWalls];
 
     dataStore.unvisitedWaypoints = [waypoints; ECwaypoints];
     dataStore.visitedWaypoints = [];
