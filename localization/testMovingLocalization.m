@@ -61,7 +61,7 @@ function [dataStore] = testMovingLocalization(Robot, maxTime)
     % Constants
     sensor_pos = [0 0.08];
     % map, optWalls, beaconLoc, waypoints, ECwaypoints
-    load("practiceMap_4credits/practiceMap_4credits_2023.mat")
+    load("compMap.mat")
     beacon_length = size(beaconLoc, 1);
     % swap order
     beacon = [beaconLoc(:, 2) beaconLoc(:, 3) beaconLoc(:, 1)];

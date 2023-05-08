@@ -42,7 +42,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
 %     sensor_pos = [0,0.08];
     
     % Load map
-    map_file = 'practiceMap_4credits_2023.mat';
+    map_file = 'compMap.mat';
     load(map_file, 'beaconLoc', 'ECwaypoints', 'map', 'optWalls', 'waypoints');
     % map(end+1, :) = optWalls(2, :);
     

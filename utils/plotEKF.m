@@ -1,7 +1,7 @@
 function h = plotEKF(map, dataStore)
 h = figure;
 g = [];
-load('practiceMap_4credits/practiceMap_4credits_2023.mat')
+load('compMap.mat')
 for i = 1:length(map)
     wall = reshape(map(i,:), 2,2);
     g(1) = plot(wall(1,:), wall(2,:), 'black');

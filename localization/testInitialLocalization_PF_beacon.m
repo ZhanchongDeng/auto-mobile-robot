@@ -59,7 +59,7 @@ function [dataStore] = testInitialLocalization_PF_beacon(Robot, maxTime)
     % Constants
     sensor_pos = [0 0.08];
     % beaconLoc, map, optWalls, beaconLoc, waypoints, ECwaypoints
-    load("practiceMap_4credits/practiceMap_4credits_2023.mat")
+    load("compMap.mat")
 
     % Beacon setup
     beacon_length = size(beaconLoc, 1);
