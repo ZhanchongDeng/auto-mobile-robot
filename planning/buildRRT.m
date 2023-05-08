@@ -15,7 +15,7 @@ function [waypoints_startTOgoal, edges, found_path] = buildRRT(obs,mapBoundary,s
 %% Parameter Setup
     step_size = 0.2; % Ideal
 %     step_size = 0.09;
-    max_tree_size = 100;
+    max_tree_size = 500;
 %     h = figure();
     
 %     [pmap] = plotObs(obs, mapBoundary);
@@ -49,7 +49,11 @@ function [waypoints_startTOgoal, edges, found_path] = buildRRT(obs,mapBoundary,s
             end
         end
     end
-    waypoints_startTOgoal = smoothen_path_circular(waypoints_startTOgoal, obs, radius);
+    if found_path
+        waypoints_startTOgoal = smoothen_path_circular(waypoints_startTOgoal, obs, radius);
+    else
+        waypoints_startTOgoal = NaN
+    end
 %     error('RRT Fails')
 end
 

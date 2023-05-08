@@ -40,25 +40,27 @@ function [particlesNew, weightsNew] = PF_beacon(particles, weights, noiseState, 
 
         %% Prepare z and expected_z
         expected_z = sensor_model(particlesNew(i, :)');
-        expected_z
         % NaN in Actual Beacon means no measurement, should ignore (slice out)
         ignoreNanBeacon= isnan(z);
-        % NaN in Expected Beacon means particle don't see a beacon, should punish (large measurement = weight 0)
-        punishNanBeacon = isnan(expected_z);
         % -1 in Expected Depth means particle see optional wall, should ignore (slice out)
         ignoreOptionalWall = (expected_z == -1);
-        keep = (~ignoreNanBeacon & ~ignoreOptionalWall);
+        expected_z(ignoreOptionalWall) = z(ignoreOptionalWall);
+        keep = (~ignoreNanBeacon);
         %% Slicing
-        expected_z(punishNanBeacon) = 1e10;
         sliced_z = z(keep);
-        expected_z = expected_z(keep)
+        expected_z = expected_z(keep);
         noise = noiseSensor(keep);
+        
+        % NaN in Expected Beacon means particle don't see a beacon, should punish (large measurement = weight 0)
+        punishNanBeacon = isnan(expected_z);
+        expected_z(punishNanBeacon) = 20;
 
         %% Evaluation Using Gaussian
         % normalize expected_z to mean 0 and std 1
         expected_z = (expected_z - sliced_z) ./ noise;
         % pdf should range from [0 - 0.39]
         allSensorWeights = normpdf(0, expected_z, 1);
+        allSensorWeights(punishNanBeacon | (allSensorWeights < 1e-100)) = 1e-100;
         % product of all elements in all Sensor Weights
         weightsNew(i,:) = prod(allSensorWeights, 'all') * 1e100;
     end

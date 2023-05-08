@@ -35,9 +35,10 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     noRobotCount = 0;
     wheel2Center = 0.16;
     radius = 0.2;
-    maxV = 0.15;
-    epsilon = 0.13;
-    closeEnough = 0.25;
+    maxV = 0.12;
+%     epsilon = 0.13;
+    epsilon = 0.2;
+    closeEnough = 0.17;
     sensor_pos = [offset_x, offset_y];
 %     sensor_pos = [0,0.08];
     
@@ -47,6 +48,8 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     % map(end+1, :) = optWalls(2, :);
     
     %% ==== Plot map ==== %%
+    close all;
+    h = figure();
     pmap = plotmapopts(map, 'color', 'black', 'LineWidth', 2);
     hold on
     poptwalls = plotmapopts(optWalls, 'color', 'red', 'LineWidth', 2);
@@ -55,7 +58,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     %% ==== Initial Localization Setup ==== %%
     selfRotateTime = 16;
     initialLocalizationTime = 18;
-    pSize = 120;
+    pSize = 200;
     particleStateNoise = [0.01; 0.01; pi / 50]; % noise for spreading particles
     particleDepthNoise = 1; % noise for evaluating depth rays
     particleBeaconNoise = 0.1; % noise for evaluating beacon
@@ -111,14 +114,20 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     % Extract pose
     dataStore.predictedPose = matchWaypoints(dataStore.particles(:, :, end), dataStore.weights(:, :, end), waypoints, k);
     dataStore.predictedPose(1,3) = mod(dataStore.predictedPose(1,3),pi);
+    disp('Initial Predicted Pose')
+    disp(dataStore.predictedPose)
+    plot(dataStore.predictedPose(1), dataStore.predictedPose(2))
     
     %% ==== PF Moving Localization Setup ==== %% 
-    particleStateNoise = [0.1; 0.1; pi / 36]; % noise for spreading particles
-    particleDepthNoise = 0.4; % noise for evaluating depth rays
-    particleBeaconNoise = 0.05; % noise for evaluating beacon
+    defaultStateNoise = [0.07; 0.07; pi / 36]; % noise for spreading particles
+    afterBumpStateNoise = [0.1; 0.1; pi];
+    particleStateNoise = defaultStateNoise;
+    particleDepthNoise = 0.3; % noise for evaluating depth rays
+    particleBeaconNoise = 0.1; % noise for evaluating beacon
     
     % Initialize particles
-    initialParticles = zeros(pSize, 3) + dataStore.predictedPose(1,3);
+    initialParticles = zeros(pSize, 3) + dataStore.predictedPose(1,:);
+    initialParticles(:, 3) = initialParticles(:, 3) + linspace(deg2rad(5), deg2rad(-5), pSize)';
     dataStore.particles(:, :, end + 1) = initialParticles;
     dataStore.weights(:, :, end + 1) = 1 / pSize + zeros(pSize, 1);
     
@@ -145,13 +154,16 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     end
     closest_point = findClosestPoint(dataStore.unvisitedWaypoints, curr_pos);
     dataStore.visitedWaypoints(end+1, :) = closest_point;
-    dataStore.unvisitedWaypoints = removePointFromList(dataStore.unvisitedWaypoints, closest_point);
     pvisited = plot(closest_point(1), closest_point(2), 'r*', 'MarkerSize', 10);
     BeepCreate(Robot)
     
 %     tStart = tic
 %     disp('start running TSP')
-    dataStore.unvisitedWaypoints = sort_list_by_TSP(dataStore.unvisitedWaypoints, closest_point);
+    unvisitedWaypoints = sort_list_by_TSP(waypoints, closest_point);
+    unvisitedECwaypoints = sort_list_by_TSP(ECwaypoints,unvisitedWaypoints(end, :));
+    dataStore.unvisitedWaypoints = [unvisitedWaypoints;unvisitedECwaypoints];
+    dataStore.unvisitedWaypoints = removePointFromList(dataStore.unvisitedWaypoints, closest_point);
+
 %     disp('finish running TSP')
 
     %% ==== RRT to visit unvisited waypoints ==== %% 
@@ -164,6 +176,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
 %         goal = findClosestPoint(dataStore.unvisitedWaypoints, start);
         goal = dataStore.unvisitedWaypoints(1, :);
         [waypoints, edges, found_path] = buildRRT(obs,mapBoundary,start,goal, radius);
+        prrt = plotmap(edges, false);
         if ~found_path
             disp('Did not find path for waypoint (' + string(goal(1)) + ', ' + string(goal(2)) + ')')
             dataStore.unvisitedWaypoints = removePointFromList(dataStore.unvisitedWaypoints, goal);
@@ -171,7 +184,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
         end
         disp('waypoints')
         disp(waypoints)
-        prrt = plotmap(edges, false);
+        
         pwaypoints = plot(waypoints(:, 1), waypoints(:, 2), 'r-', 'LineWidth', 1);
         pstart = plot(start(1), start(2), 'co', 'MarkerSize', 10);
         pend = plot(goal(1), goal(2), 'm*', 'MarkerSize', 10);
@@ -182,6 +195,16 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
 
             % READ & STORE SENSOR DATA
             [noRobotCount,dataStore]=readStoreSensorData(Robot,noRobotCount,dataStore);
+            
+            bumpInfoNow = dataStore.bump(end, :).';
+            bumps = bumpInfoNow([2 3 7]);
+
+            if any(bumps)
+                travelDist(CreatePort, maxV, -0.5);
+%                 particleStateNoise = afterBumpStateNoise;
+%             else
+%                 particleStateNoise = defaultStateNoise;
+            end
 
             % GET ROBOT POSE
             if flag_use_truthpose
@@ -202,8 +225,9 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
 
                 dataStore.predictedPose  = [dataStore.predictedPose ; topKPose(dataStore.particles(:, :, end), dataStore.weights(:, :, end), k)];
                 pose = dataStore.predictedPose(end, 1:3);
+                
             end
-            ptraj = plot(pose(1), pose(2), 'b*', 'MarkerSize', 10);
+            ptraj = quiver(pose(1), pose(2), cos(pose(3)), sin(pose(3)), 0.2, 'b');
             
             % CONTROL FUNCTION (send robot commands)
             [cmdV, cmdW, gotopt] = visitWaypoints(waypoints, pose, gotopt, closeEnough, epsilon);
@@ -232,6 +256,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
         dataStore.visitedWaypoints(end+1, :) = goal;
         dataStore.unvisitedWaypoints = removePointFromList(dataStore.unvisitedWaypoints, goal);
         pvisited = plot(goal(1), goal(2), 'r*', 'MarkerSize', 10);
+        disp('Beeped')
         BeepCreate(Robot)
         
     end
@@ -248,7 +273,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
         'Map', 'Optional Walls', 'Trajectory', 'Visited Waypoints')
     xlabel('x(m)')
     ylabel('y(m)')
-    title('Robot true trajectory, EKF estimated trajectory')
+    title('Robot estimated trajectory')
     hold off
 
 end

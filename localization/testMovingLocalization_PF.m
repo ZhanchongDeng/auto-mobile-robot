@@ -71,7 +71,7 @@ function [dataStore] = testMovingLocalization_PF(Robot, maxTime)
     beacon = [beaconLoc(:, 2) beaconLoc(:, 3) beaconLoc(:, 1)];
     
     % Initialize particles
-    initialParticles = zeros(pSize, 3) + [0 0 -pi/4];
+    initialParticles = zeros(pSize, 3) + [-1.22100000000000 -1.82500000000000 -pi];
     dataStore.particles = initialParticles;
     dataStore.weights = 1 / pSize + zeros(pSize, 1);
     
