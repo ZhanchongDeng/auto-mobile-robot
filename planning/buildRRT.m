@@ -1,4 +1,4 @@
-function [waypoints_startTOgoal, edges] = buildRRT(obs,mapBoundary,start,goal, radius)
+function [waypoints_startTOgoal, edges, found_path] = buildRRT(obs,mapBoundary,start,goal, radius)
 % BUILDRRT: Run RRT with circular robot
 %
 %       INPUTS:
@@ -15,7 +15,7 @@ function [waypoints_startTOgoal, edges] = buildRRT(obs,mapBoundary,start,goal, r
 %% Parameter Setup
     step_size = 0.2; % Ideal
 %     step_size = 0.09;
-    max_tree_size = 5000;
+    max_tree_size = 100;
 %     h = figure();
     
 %     [pmap] = plotObs(obs, mapBoundary);
@@ -24,6 +24,7 @@ function [waypoints_startTOgoal, edges] = buildRRT(obs,mapBoundary,start,goal, r
     edges = [0 0 0 0];
     g = graph();
     g = addnode(g, 1);
+    found_path = false;
     
     %% Loop
     while size(nodes,1) < max_tree_size
@@ -43,6 +44,7 @@ function [waypoints_startTOgoal, edges] = buildRRT(obs,mapBoundary,start,goal, r
                     edges(end+1, :) = [q_new(1), q_new(2), goal(1), goal(2)];
                 end
                 waypoints_startTOgoal = findShortestPath(nodes, g, 1, size(nodes, 1));
+                found_path = true;
                 break;
             end
         end

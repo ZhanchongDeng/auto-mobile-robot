@@ -163,7 +163,12 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
         end
 %         goal = findClosestPoint(dataStore.unvisitedWaypoints, start);
         goal = dataStore.unvisitedWaypoints(1, :);
-        [waypoints, edges] = buildRRT(obs,mapBoundary,start,goal, radius);
+        [waypoints, edges, found_path] = buildRRT(obs,mapBoundary,start,goal, radius);
+        if ~found_path
+            disp('Did not find path for waypoint (' + string(goal(1)) + ', ' + string(goal(2)) + ')')
+            dataStore.unvisitedWaypoints = removePointFromList(dataStore.unvisitedWaypoints, goal);
+            continue
+        end
         disp('waypoints')
         disp(waypoints)
         prrt = plotmap(edges, false);
@@ -198,6 +203,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
                 dataStore.predictedPose  = [dataStore.predictedPose ; topKPose(dataStore.particles(:, :, end), dataStore.weights(:, :, end), k)];
                 pose = dataStore.predictedPose(end, 1:3);
             end
+            ptraj = plot(pose(1), pose(2), 'b*', 'MarkerSize', 10);
             
             % CONTROL FUNCTION (send robot commands)
             [cmdV, cmdW, gotopt] = visitWaypoints(waypoints, pose, gotopt, closeEnough, epsilon);
@@ -232,8 +238,11 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     SetFwdVelAngVelCreate(Robot, 0, 0)
 
     %% ==== Plot Trajectory ==== %
-    tp = dataStore.truthPose;
-    ptraj = plot(tp(:, 2), tp(:, 3), 'b', 'LineWidth', 2);
+    if flag_use_truthpose
+        tp = dataStore.truthPose;
+%         ptraj = plot(tp(:, 2), tp(:, 3), 'b', 'LineWidth', 2);
+    end
+    
 %     pekf_mu = plot()
     legend([pmap(1), poptwalls(1), ptraj, pvisited], ...
         'Map', 'Optional Walls', 'Trajectory', 'Visited Waypoints')
