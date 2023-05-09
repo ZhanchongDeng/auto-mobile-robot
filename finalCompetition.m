@@ -185,6 +185,7 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
         if ~found_path
             disp('Did not find path for waypoint (' + string(goal(1)) + ', ' + string(goal(2)) + ')')
             dataStore.unvisitedWaypoints = removePointFromList(dataStore.unvisitedWaypoints, goal);
+            delete(prrt)
             continue
         end
         disp('waypoints')
