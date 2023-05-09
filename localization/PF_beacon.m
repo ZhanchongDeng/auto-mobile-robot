@@ -25,7 +25,7 @@ function [particlesNew, weightsNew] = PF_beacon(particles, weights, noiseState, 
     % measurement is first 12 beacon, then 9 depth
     z = [z_beacon; z_depth];
     % noise sensor is first 12 noiseBeacon, then 9 noiseDepth
-    noiseSensor = [(noiseBeacon * ones(12, 1)); (noiseDepth * ones(9, 1))];
+    noiseSensor = [(noiseBeacon * ones(size(z_beacon, 1), 1)); (noiseDepth * ones(9, 1))];
 
     if doSample
         candidates = datasample(particles, N, 1, Replace = true, Weights = weights);
@@ -49,6 +49,7 @@ function [particlesNew, weightsNew] = PF_beacon(particles, weights, noiseState, 
         %% Slicing
         sliced_z = z(keep);
         expected_z = expected_z(keep);
+        size(noiseSensor)
         noise = noiseSensor(keep);
         
         % NaN in Expected Beacon means particle don't see a beacon, should punish (large measurement = weight 0)

@@ -6,6 +6,11 @@ function [dataStore] = finalCompetition(Robot, maxTime, offset_x, offset_y)
     elseif nargin < 2
         maxTime = 800;
     end
+
+    if nargin < 3
+        offset_x = 0;
+        offset_y = 0.08;
+    end
     
     try
         CreatePort = Robot.CreatePort;
